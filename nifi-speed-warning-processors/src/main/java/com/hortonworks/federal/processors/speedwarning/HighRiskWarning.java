@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hortonworks.federal.processors.speedwarning;
 
 import com.google.gson.Gson;
@@ -25,8 +26,8 @@ import org.apache.http.util.EntityUtils;
 import org.apache.nifi.annotation.behavior.EventDriven;
 import org.apache.nifi.annotation.behavior.InputRequirement;
 import org.apache.nifi.annotation.documentation.CapabilityDescription;
-import org.apache.nifi.annotation.documentation.SeeAlso;
 import org.apache.nifi.annotation.documentation.Tags;
+import org.apache.nifi.annotation.lifecycle.OnScheduled;
 import org.apache.nifi.components.PropertyDescriptor;
 import org.apache.nifi.flowfile.FlowFile;
 import org.apache.nifi.processor.ProcessContext;
@@ -44,57 +45,50 @@ import java.io.OutputStream;
 import java.sql.Timestamp;
 import java.util.*;
 
-@Tags({"City of Las Vegas, Speed Warning"})
+@Tags({"City of Las Vegas, Crosswalk, high-risk pedestrian corridor"})
 @InputRequirement(InputRequirement.Requirement.INPUT_REQUIRED)
 @EventDriven
-@CapabilityDescription("Uses incoming vehicle gps data to determine if the vehicle is speeding or not")
-@SeeAlso({})
-public class SpeedWarning extends AbstractVegasProcessor {
+@CapabilityDescription("Uses incoming vehicle gps data to determine if the vehicle is near a high-risk pedestrian corridor or not")
+public class HighRiskWarning extends AbstractVegasProcessor {
 
-    static final PropertyDescriptor VEHICLE_ID = new PropertyDescriptor.Builder()
+    public static final PropertyDescriptor VEHICLE_ID = new PropertyDescriptor.Builder()
             .name("Vehicle ID")
             .required(true)
             .description("Name of the attribute for Vehicle ID")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
-    static final PropertyDescriptor LONGITUDE = new PropertyDescriptor.Builder()
+    public static final PropertyDescriptor LONGITUDE = new PropertyDescriptor.Builder()
             .name("Longitude")
             .required(true)
             .description("Name of the attribute for longitude")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
-    static final PropertyDescriptor LATITUDE = new PropertyDescriptor.Builder()
+    public static final PropertyDescriptor LATITUDE = new PropertyDescriptor.Builder()
             .name("Latitude")
             .required(true)
             .description("Name of the attribute for latitude")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
-    static final PropertyDescriptor CURRENT_SPEED = new PropertyDescriptor.Builder()
-            .name("Speed")
-            .required(true)
-            .description("Name of the attribute for speed")
-            .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
-            .build();
-
-    static final Relationship LOCATION_NOT_AVAILABLE = new Relationship.Builder()
+    public static final Relationship LOCATION_NOT_AVAILABLE = new Relationship.Builder()
             .name("Speed not available at location")
             .description("There is no speed data for the current location given")
             .build();
-    static final Relationship SPEED_WARNING = new Relationship.Builder()
-            .name("Speed Warning")
-            .description("The driver is over the speed limit")
+    public static final Relationship GENERAL_WARNING = new Relationship.Builder()
+            .name("General Warning")
+            .description("Issue a warning to the driver")
             .build();
 
     private List<PropertyDescriptor> descriptors;
+
     private Set<Relationship> relationships;
 
     @Override
     protected void init(final ProcessorInitializationContext context) {
         final List<PropertyDescriptor> descriptors = new ArrayList<PropertyDescriptor>();
+        descriptors.add(INDEX_NAME);
         descriptors.add(VEHICLE_ID);
         descriptors.add(LONGITUDE);
         descriptors.add(LATITUDE);
-        descriptors.add(CURRENT_SPEED);
         descriptors.add(INDEX_NAME);
         descriptors.add(HOST);
         descriptors.add(PORT);
@@ -102,7 +96,7 @@ public class SpeedWarning extends AbstractVegasProcessor {
 
         final Set<Relationship> relationships = new HashSet<Relationship>();
         relationships.add(LOCATION_NOT_AVAILABLE);
-        relationships.add(SPEED_WARNING);
+        relationships.add(GENERAL_WARNING);
 
         this.relationships = Collections.unmodifiableSet(relationships);
     }
@@ -117,6 +111,11 @@ public class SpeedWarning extends AbstractVegasProcessor {
         return descriptors;
     }
 
+    @OnScheduled
+    public void onScheduled(final ProcessContext context) {
+
+    }
+
     @Override
     public void onTrigger(final ProcessContext context, final ProcessSession session) throws ProcessException {
         FlowFile flowFile = session.get();
@@ -128,7 +127,6 @@ public class SpeedWarning extends AbstractVegasProcessor {
 
         final double lon = Double.parseDouble(flowFile.getAttribute(context.getProperty(LONGITUDE).getValue()));
         final double lat = Double.parseDouble(flowFile.getAttribute(context.getProperty(LATITUDE).getValue()));
-        final int currentSpeed = Integer.parseInt(flowFile.getAttribute(context.getProperty(CURRENT_SPEED).getValue()));
         final String vehicleID = flowFile.getAttribute(context.getProperty(VEHICLE_ID).getValue());
         final String esIndex = "/" + context.getProperty(INDEX_NAME).getValue() + "/_search";
 
@@ -153,11 +151,11 @@ public class SpeedWarning extends AbstractVegasProcessor {
         int searchHits = JsonPath.read(results, "$.hits.total");
 
         if (searchHits > 0) {
-            String strSpeed = JsonPath.read(results, "$.hits.hits[0]._source.properties.TITLE");
-            int speed = Integer.parseInt(strSpeed.substring(0, 2));
-            int eventOverSpeed = currentSpeed - speed;
+            String warningMsg = JsonPath.read(results, "$.hits.hits[0]._source.properties.LEGEND");
             long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
-            WarningPojo warning = new WarningPojo(eventOverSpeed, timestamp, vehicleID, speed);
+            HashMap<String, String> optional = new HashMap<String, String>();
+            optional.put("message", warningMsg);
+            GeneralWarningPojo warning = new GeneralWarningPojo(2, timestamp, new String[]{vehicleID}, optional);
             Gson gson = new Gson();
             String json = gson.toJson(warning);
 
@@ -168,7 +166,7 @@ public class SpeedWarning extends AbstractVegasProcessor {
                     out.write(json.getBytes());
                 }
             });
-            session.transfer(flowFile, SPEED_WARNING);
+            session.transfer(flowFile, GENERAL_WARNING);
 
         } else if (searchHits <= 0) {
             session.transfer(flowFile, LOCATION_NOT_AVAILABLE);
