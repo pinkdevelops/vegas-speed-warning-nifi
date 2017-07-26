@@ -19,18 +19,17 @@ package com.hortonworks.federal.processors.speedwarning;
 
 public class OptionalPojo {
 
-    private String message;
+    private String eventExplanation;
 
-    public OptionalPojo(String message) {
-        this.message = message;
+    public OptionalPojo(String eventExplanation) {
+        this.eventExplanation = eventExplanation;
     }
 
-    public String getMessage() {
-        return message;
+    public String getEventExplanation() {
+        return eventExplanation;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setEventExplanation(String eventExplanation) {
+        this.eventExplanation = eventExplanation;
     }
-
 }

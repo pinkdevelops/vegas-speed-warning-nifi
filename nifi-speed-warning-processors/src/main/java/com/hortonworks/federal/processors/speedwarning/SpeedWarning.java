@@ -156,19 +156,22 @@ public class SpeedWarning extends AbstractVegasProcessor {
             String strSpeed = JsonPath.read(results, "$.hits.hits[0]._source.properties.TITLE");
             int speed = Integer.parseInt(strSpeed.substring(0, 2));
             double eventOverSpeed = currentSpeed - speed;
-            long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
-            WarningPojo warning = new WarningPojo(eventOverSpeed, timestamp, vehicleID, speed);
-            Gson gson = new Gson();
-            String json = gson.toJson(warning);
+            if (eventOverSpeed > 0) {
+                boolean speeding = true;
+                long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
+                WarningPojo warning = new WarningPojo(speeding, timestamp, vehicleID, Integer.toString(speed));
+                Gson gson = new Gson();
+                String json = gson.toJson(warning);
 
-            flowFile = session.write(flowFile, new OutputStreamCallback() {
+                flowFile = session.write(flowFile, new OutputStreamCallback() {
 
-                @Override
-                public void process(OutputStream out) throws IOException {
-                    out.write(json.getBytes());
-                }
-            });
-            session.transfer(flowFile, SPEED_WARNING);
+                    @Override
+                    public void process(OutputStream out) throws IOException {
+                        out.write(json.getBytes());
+                    }
+                });
+                session.transfer(flowFile, SPEED_WARNING);
+            }
 
         } else if (searchHits <= 0) {
             session.transfer(flowFile, LOCATION_NOT_AVAILABLE);

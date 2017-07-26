@@ -19,23 +19,23 @@ package com.hortonworks.federal.processors.speedwarning;
 
 public class WarningPojo {
 
-    private double eventOverSpeed;
+    private boolean eventOverSpeed;
     private long timestamp;
     private String vehicleId;
-    private int eventSpeedLimit;
+    private String eventSpeedLimit;
 
-    public WarningPojo(double eventOverSpeed, long timestamp, String vehicleId, int eventSpeedLimit) {
+    public WarningPojo(boolean eventOverSpeed, long timestamp, String vehicleId, String eventSpeedLimit) {
         this.eventOverSpeed = eventOverSpeed;
         this.timestamp = timestamp;
         this.vehicleId = vehicleId;
         this.eventSpeedLimit = eventSpeedLimit;
     }
 
-    public double getEventOverSpeed() {
+    public boolean getEventOverSpeed() {
         return eventOverSpeed;
     }
 
-    public void setEventOverSpeed(double eventOverSpeed) {
+    public void setEventOverSpeed(boolean eventOverSpeed) {
         this.eventOverSpeed = eventOverSpeed;
     }
 
@@ -55,11 +55,11 @@ public class WarningPojo {
         this.vehicleId = vehicleId;
     }
 
-    public int getEventSpeedLimit() {
+    public String getEventSpeedLimit() {
         return eventSpeedLimit;
     }
 
-    public void setEventSpeedLimit(int eventSpeedLimit) {
+    public void setEventSpeedLimit(String eventSpeedLimit) {
         this.eventSpeedLimit = eventSpeedLimit;
     }
 }

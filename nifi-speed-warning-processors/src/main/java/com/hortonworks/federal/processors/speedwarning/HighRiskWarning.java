@@ -153,9 +153,9 @@ public class HighRiskWarning extends AbstractVegasProcessor {
         if (searchHits > 0) {
             String warningMsg = JsonPath.read(results, "$.hits.hits[0]._source.properties.LEGEND");
             long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
-            HashMap<String, String> optional = new HashMap<String, String>();
-            optional.put("message", warningMsg);
-            GeneralWarningPojo warning = new GeneralWarningPojo(2, timestamp, new String[]{vehicleID}, optional);
+            HashMap<String, String> eventExplanation = new HashMap<String, String>();
+            eventExplanation.put("eventExplanation", warningMsg);
+            GeneralWarningPojo warning = new GeneralWarningPojo("2", timestamp, new String[]{vehicleID}, eventExplanation);
             Gson gson = new Gson();
             String json = gson.toJson(warning);
 

@@ -21,23 +21,23 @@ import java.util.HashMap;
 
 public class GeneralWarningPojo {
 
-    private int eventId;
+    private String eventId;
     private long timestamp;
     private String[] vehicleIds;
     private HashMap<String, String> optional = new HashMap<String, String>();
 
-    public GeneralWarningPojo(int eventId, long timestamp, String[] vehicleIds, HashMap<String, String> optional) {
+    public GeneralWarningPojo(String eventId, long timestamp, String[] vehicleIds, HashMap<String, String> optional) {
         this.eventId = eventId;
         this.timestamp = timestamp;
         this.vehicleIds = vehicleIds;
         this.optional = optional;
     }
 
-    public int getEventId() {
+    public String getEventId() {
         return eventId;
     }
 
-    public void setEventId(int eventId) {
+    public void setEventId(String eventId) {
         this.eventId = eventId;
     }
 
