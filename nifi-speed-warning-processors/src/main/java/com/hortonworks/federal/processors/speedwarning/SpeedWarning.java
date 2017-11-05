@@ -127,7 +127,7 @@ public class SpeedWarning extends AbstractVegasProcessor {
 
         final double lon = Double.parseDouble(flowFile.getAttribute(context.getProperty(LONGITUDE).getValue()));
         final double lat = Double.parseDouble(flowFile.getAttribute(context.getProperty(LATITUDE).getValue()));
-        final String strCurrentSpeed = flowfile.getAttribute(context.getProperty(CURRENT_SPEED).getValue());
+        final String strCurrentSpeed = flowFile.getAttribute(context.getProperty(CURRENT_SPEED).getValue());
         final double currentSpeed = (strCurrentSpeed.equals("null")) ? 0.0 : Double.parseDouble(strCurrentSpeed);
         final String vehicleID = flowFile.getAttribute(context.getProperty(VEHICLE_ID).getValue());
         final String esIndex = "/" + context.getProperty(INDEX_NAME).getValue() + "/_search";
@@ -157,11 +157,12 @@ public class SpeedWarning extends AbstractVegasProcessor {
             int speed = Integer.parseInt(strSpeed.substring(0, 2));
             double eventOverSpeed = currentSpeed - speed;
             boolean speeding;
-            if (eventOverSpeed > 0) {
+
+            if (eventOverSpeed > 0)
                 speeding = true;
             else
                 speeding = false;
-            }
+
             long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
             WarningPojo warning = new WarningPojo(speeding, timestamp, vehicleID, Integer.toString(speed));
             Gson gson = new Gson();
