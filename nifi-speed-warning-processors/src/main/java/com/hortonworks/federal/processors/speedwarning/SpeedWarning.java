@@ -128,7 +128,7 @@ public class SpeedWarning extends AbstractVegasProcessor {
         final double lon = Double.parseDouble(flowFile.getAttribute(context.getProperty(LONGITUDE).getValue()));
         final double lat = Double.parseDouble(flowFile.getAttribute(context.getProperty(LATITUDE).getValue()));
         final String strCurrentSpeed = flowFile.getAttribute(context.getProperty(CURRENT_SPEED).getValue());
-        final double currentSpeed = (strCurrentSpeed.equals("null")) ? 0.0 : Double.parseDouble(strCurrentSpeed);
+        final double currentSpeed = ("".equals(strCurrentSpeed)) ? 0.0 : Double.parseDouble(strCurrentSpeed);
         final String vehicleID = flowFile.getAttribute(context.getProperty(VEHICLE_ID).getValue());
         final String esIndex = "/" + context.getProperty(INDEX_NAME).getValue() + "/_search";
 
