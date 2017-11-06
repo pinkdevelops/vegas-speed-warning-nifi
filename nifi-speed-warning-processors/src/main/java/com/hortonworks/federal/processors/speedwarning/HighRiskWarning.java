@@ -131,7 +131,7 @@ public class HighRiskWarning extends AbstractVegasProcessor {
         final String esIndex = "/" + context.getProperty(INDEX_NAME).getValue() + "/_search";
 
         HttpEntity entity1 = new NStringEntity(
-                "{\"query\":{\"bool\":{\"must\":{\"match_all\":{}},\"filter\":{\"geo_shape\":{\"geometry\":{\"shape\":{\"type\":\"circle\",\"coordinates\":[" + lon + "," + lat + "],\"radius\":\"10m\"},\"relation\":\"intersects\"}}}}}}", ContentType.APPLICATION_JSON);
+                "{\"query\":{\"bool\":{\"must\":{\"match_all\":{}},\"filter\":{\"geo_shape\":{\"geometry\":{\"shape\":{\"type\":\"circle\",\"coordinates\":[" + lon + "," + lat + "],\"radius\":\"30m\"},\"relation\":\"intersects\"}}}}}}", ContentType.APPLICATION_JSON);
 
         Response response = null;
         try {

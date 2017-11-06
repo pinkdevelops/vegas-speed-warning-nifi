@@ -75,7 +75,6 @@ public class SpeedWarning extends AbstractVegasProcessor {
             .description("Name of the attribute for speed")
             .addValidator(StandardValidators.NON_EMPTY_VALIDATOR)
             .build();
-
     static final Relationship LOCATION_NOT_AVAILABLE = new Relationship.Builder()
             .name("Speed not available at location")
             .description("There is no speed data for the current location given")
@@ -128,7 +127,8 @@ public class SpeedWarning extends AbstractVegasProcessor {
 
         final double lon = Double.parseDouble(flowFile.getAttribute(context.getProperty(LONGITUDE).getValue()));
         final double lat = Double.parseDouble(flowFile.getAttribute(context.getProperty(LATITUDE).getValue()));
-        final double currentSpeed = Double.parseDouble(flowFile.getAttribute(context.getProperty(CURRENT_SPEED).getValue()));
+        final String strCurrentSpeed = flowFile.getAttribute(context.getProperty(CURRENT_SPEED).getValue());
+        final double currentSpeed = ("".equals(strCurrentSpeed)) ? 0.0 : Double.parseDouble(strCurrentSpeed);
         final String vehicleID = flowFile.getAttribute(context.getProperty(VEHICLE_ID).getValue());
         final String esIndex = "/" + context.getProperty(INDEX_NAME).getValue() + "/_search";
 
@@ -156,22 +156,25 @@ public class SpeedWarning extends AbstractVegasProcessor {
             String strSpeed = JsonPath.read(results, "$.hits.hits[0]._source.properties.TITLE");
             int speed = Integer.parseInt(strSpeed.substring(0, 2));
             double eventOverSpeed = currentSpeed - speed;
-            if (eventOverSpeed > 0) {
-                boolean speeding = true;
-                long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
-                WarningPojo warning = new WarningPojo(speeding, timestamp, vehicleID, Integer.toString(speed));
-                Gson gson = new Gson();
-                String json = gson.toJson(warning);
+            boolean speeding;
 
-                flowFile = session.write(flowFile, new OutputStreamCallback() {
+            if (eventOverSpeed > 0)
+                speeding = true;
+            else
+                speeding = false;
 
+            long timestamp = new Timestamp(System.currentTimeMillis()).getTime();
+            WarningPojo warning = new WarningPojo(speeding, timestamp, vehicleID, Integer.toString(speed));
+            Gson gson = new Gson();
+            String json = gson.toJson(warning);
+
+            flowFile = session.write(flowFile, new OutputStreamCallback() {
                     @Override
                     public void process(OutputStream out) throws IOException {
                         out.write(json.getBytes());
                     }
                 });
-                session.transfer(flowFile, SPEED_WARNING);
-            }
+            session.transfer(flowFile, SPEED_WARNING);
 
         } else if (searchHits <= 0) {
             session.transfer(flowFile, LOCATION_NOT_AVAILABLE);
